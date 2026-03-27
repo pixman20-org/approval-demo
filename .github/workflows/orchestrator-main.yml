@@ -16,6 +16,9 @@ jobs:
     runs-on: ubuntu-24.04
     needs: pull-artifacts
     environment: US-Dev-DB
+    concurrency:
+      group: deploy-US-Dev-DB
+      cancel-in-progress: false
     steps:
       - name: Deploy
         run: echo "Deploying into US-Dev-DB"
@@ -25,6 +28,9 @@ jobs:
     runs-on: ubuntu-24.04
     needs: deploy-us-dev-db
     environment: US-Dev-App
+    concurrency:
+      group: deploy-US-Dev-App
+      cancel-in-progress: false
     steps:
       - name: Deploy
         run: echo "Deploying into US-Dev-App"

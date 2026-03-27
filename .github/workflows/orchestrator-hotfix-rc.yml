@@ -23,6 +23,9 @@ jobs:
     needs: pull-artifacts
     if: ${{ !inputs.skip_qa }}
     environment: EU-QA-DB
+    concurrency:
+      group: deploy-EU-QA-DB
+      cancel-in-progress: false
     steps:
       - name: Deploy
         run: echo "Deploying into EU-QA-DB"
@@ -33,6 +36,9 @@ jobs:
     needs: deploy-eu-qa-db
     if: ${{ !inputs.skip_qa }}
     environment: EU-QA-App
+    concurrency:
+      group: deploy-EU-QA-App
+      cancel-in-progress: false
     steps:
       - name: Deploy
         run: echo "Deploying into EU-QA-App"
@@ -43,6 +49,9 @@ jobs:
     needs: pull-artifacts
     if: ${{ !inputs.skip_qa }}
     environment: US-QA-DB
+    concurrency:
+      group: deploy-US-QA-DB
+      cancel-in-progress: false
     steps:
       - name: Deploy
         run: echo "Deploying into US-QA-DB"
@@ -53,6 +62,9 @@ jobs:
     needs: deploy-us-qa-db
     if: ${{ !inputs.skip_qa }}
     environment: US-QA-App
+    concurrency:
+      group: deploy-US-QA-App
+      cancel-in-progress: false
     steps:
       - name: Deploy
         run: echo "Deploying into US-QA-App"
@@ -67,6 +79,9 @@ jobs:
       && (needs.deploy-eu-qa-app.result == 'success' || needs.deploy-eu-qa-app.result == 'skipped')
       && (needs.deploy-us-qa-app.result == 'success' || needs.deploy-us-qa-app.result == 'skipped')
     environment: PreRelease-PRD
+    concurrency:
+      group: deploy-PreRelease-PRD
+      cancel-in-progress: false
     steps:
       - name: Approved
         run: echo "PreRelease-PRD gate approved"
@@ -76,6 +91,9 @@ jobs:
     runs-on: ubuntu-24.04
     needs: pre-release-prd
     environment: EU-PRD-DB
+    concurrency:
+      group: deploy-EU-PRD-DB
+      cancel-in-progress: false
     steps:
       - name: Deploy
         run: echo "Deploying into EU-PRD-DB"
@@ -85,6 +103,9 @@ jobs:
     runs-on: ubuntu-24.04
     needs: deploy-eu-prd-db
     environment: EU-PRD-App
+    concurrency:
+      group: deploy-EU-PRD-App
+      cancel-in-progress: false
     steps:
       - name: Deploy
         run: echo "Deploying into EU-PRD-App"
@@ -94,6 +115,9 @@ jobs:
     runs-on: ubuntu-24.04
     needs: deploy-eu-prd-app
     environment: US-PRD-DB
+    concurrency:
+      group: deploy-US-PRD-DB
+      cancel-in-progress: false
     steps:
       - name: Deploy
         run: echo "Deploying into US-PRD-DB"
@@ -103,6 +127,9 @@ jobs:
     runs-on: ubuntu-24.04
     needs: deploy-us-prd-db
     environment: US-PRD-App
+    concurrency:
+      group: deploy-US-PRD-App
+      cancel-in-progress: false
     steps:
       - name: Deploy
         run: echo "Deploying into US-PRD-App"
