@@ -17,7 +17,10 @@ EU-PRD-App
 
 - orchestrator-main.yml workflow pulls artifacts (stub) and deploys through US-Dev-DB -> US-Dev-Ap
 - orchestrator-rc.yml workflow pulls artifacts and deploys to ((EU-QA-DB -> EU->QA-App) and (US-QA-DB -> US-QA-App)) -> PreRelease-PRD -> EU-PRD-DB -> EU-PRD-App -> US-PRD-DB -> US-PRD-App
+    - EU->US in PRD is sequential intentionally, not parallel like in QA
 - orchestrator-hotfix-rc.yml workflow in devops-demo repository pulls artifacts and deploys to ((EU-QA-DB -> EU->QA-App) and (US-QA-DB -> EU-QA-App)) -> PreRelease-PRD -> EU-PRD-DB -> EU-PRD-App -> US-PRD-DB -> US-PRD-App
     - NOTE: In this case *-QA-* environments are optional
+    - EU->US in PRD is sequential intentionally, not parallel like in QA
+
 
 
