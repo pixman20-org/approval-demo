@@ -1,0 +1,30 @@
+name: Orchestrator - Main
+
+on:
+  workflow_dispatch:
+
+jobs:
+  pull-artifacts:
+    name: Pull Artifacts
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Pull artifacts
+        run: echo "[STUB] Pulling artifacts"
+
+  deploy-us-dev-db:
+    name: Deploy US-Dev-DB
+    runs-on: ubuntu-24.04
+    needs: pull-artifacts
+    environment: US-Dev-DB
+    steps:
+      - name: Deploy
+        run: echo "Deploying into US-Dev-DB"
+
+  deploy-us-dev-app:
+    name: Deploy US-Dev-App
+    runs-on: ubuntu-24.04
+    needs: deploy-us-dev-db
+    environment: US-Dev-App
+    steps:
+      - name: Deploy
+        run: echo "Deploying into US-Dev-App"
