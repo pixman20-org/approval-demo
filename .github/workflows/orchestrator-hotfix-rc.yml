@@ -49,14 +49,38 @@ jobs:
     with:
       environment: US-QA-App
 
-  pre-release-prd:
-    name: Pre-Release PRD Approval
+  supersede-older-runs:
+    name: Supersede Older Waiting Runs
     runs-on: ubuntu-24.04
     needs: [pull-artifacts, deploy-us-qa-app]
     if: |
       always()
       && needs.pull-artifacts.result == 'success'
       && (needs.deploy-us-qa-app.result == 'success' || needs.deploy-us-qa-app.result == 'skipped')
+    permissions:
+      actions: write
+    steps:
+      - name: Cancel older runs waiting at gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run list \
+            --repo "$GITHUB_REPOSITORY" \
+            --workflow "${{ github.workflow }}" \
+            --status waiting \
+            --json databaseId \
+            --jq '.[].databaseId' | \
+          while read -r run_id; do
+            if [ "$run_id" -lt "${{ github.run_id }}" ]; then
+              echo "Superseding older run: $run_id"
+              gh run cancel "$run_id" --repo "$GITHUB_REPOSITORY" || true
+            fi
+          done
+
+  pre-release-prd:
+    name: Pre-Release PRD Approval
+    runs-on: ubuntu-24.04
+    needs: supersede-older-runs
     environment: PreRelease-PRD
     concurrency:
       group: deploy-PreRelease-PRD
