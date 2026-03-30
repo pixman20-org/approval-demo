@@ -29,4 +29,10 @@ jobs:
     environment: ${{ inputs.environment }}
     steps:
       - name: Deploy
-        run: echo "Deploying DB into ${{ inputs.environment }}"
+        run: |
+          echo "Starting DB migration for ${{ inputs.environment }}"
+          for i in $(seq 1 30); do
+            echo "  Operation $i/30..."
+            sleep 1
+          done
+          echo "DB migration complete for ${{ inputs.environment }}"
