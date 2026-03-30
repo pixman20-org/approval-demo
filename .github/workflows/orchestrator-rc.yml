@@ -13,51 +13,31 @@ jobs:
 
   deploy-eu-qa-db:
     name: Deploy EU-QA-DB
-    runs-on: ubuntu-24.04
     needs: pull-artifacts
-    environment: EU-QA-DB
-    concurrency:
-      group: deploy-EU-QA-DB
-      cancel-in-progress: false
-    steps:
-      - name: Deploy
-        run: echo "Deploying into EU-QA-DB"
+    uses: ./.github/workflows/deploy-db.yml
+    with:
+      environment: EU-QA-DB
 
   deploy-eu-qa-app:
     name: Deploy EU-QA-App
-    runs-on: ubuntu-24.04
     needs: deploy-eu-qa-db
-    environment: EU-QA-App
-    concurrency:
-      group: deploy-EU-QA-App
-      cancel-in-progress: false
-    steps:
-      - name: Deploy
-        run: echo "Deploying into EU-QA-App"
+    uses: ./.github/workflows/deploy-app.yml
+    with:
+      environment: EU-QA-App
 
   deploy-us-qa-db:
     name: Deploy US-QA-DB
-    runs-on: ubuntu-24.04
     needs: pull-artifacts
-    environment: US-QA-DB
-    concurrency:
-      group: deploy-US-QA-DB
-      cancel-in-progress: false
-    steps:
-      - name: Deploy
-        run: echo "Deploying into US-QA-DB"
+    uses: ./.github/workflows/deploy-db.yml
+    with:
+      environment: US-QA-DB
 
   deploy-us-qa-app:
     name: Deploy US-QA-App
-    runs-on: ubuntu-24.04
     needs: deploy-us-qa-db
-    environment: US-QA-App
-    concurrency:
-      group: deploy-US-QA-App
-      cancel-in-progress: false
-    steps:
-      - name: Deploy
-        run: echo "Deploying into US-QA-App"
+    uses: ./.github/workflows/deploy-app.yml
+    with:
+      environment: US-QA-App
 
   pre-release-prd:
     name: Pre-Release PRD Approval
@@ -73,48 +53,28 @@ jobs:
 
   deploy-eu-prd-db:
     name: Deploy EU-PRD-DB
-    runs-on: ubuntu-24.04
     needs: pre-release-prd
-    environment: EU-PRD-DB
-    concurrency:
-      group: deploy-EU-PRD-DB
-      cancel-in-progress: false
-    steps:
-      - name: Deploy
-        run: echo "Deploying into EU-PRD-DB"
+    uses: ./.github/workflows/deploy-db.yml
+    with:
+      environment: EU-PRD-DB
 
   deploy-eu-prd-app:
     name: Deploy EU-PRD-App
-    runs-on: ubuntu-24.04
     needs: deploy-eu-prd-db
-    environment: EU-PRD-App
-    concurrency:
-      group: deploy-EU-PRD-App
-      cancel-in-progress: false
-    steps:
-      - name: Deploy
-        run: echo "Deploying into EU-PRD-App"
+    uses: ./.github/workflows/deploy-app.yml
+    with:
+      environment: EU-PRD-App
 
   deploy-us-prd-db:
     name: Deploy US-PRD-DB
-    runs-on: ubuntu-24.04
     needs: deploy-eu-prd-app
-    environment: US-PRD-DB
-    concurrency:
-      group: deploy-US-PRD-DB
-      cancel-in-progress: false
-    steps:
-      - name: Deploy
-        run: echo "Deploying into US-PRD-DB"
+    uses: ./.github/workflows/deploy-db.yml
+    with:
+      environment: US-PRD-DB
 
   deploy-us-prd-app:
     name: Deploy US-PRD-App
-    runs-on: ubuntu-24.04
     needs: deploy-us-prd-db
-    environment: US-PRD-App
-    concurrency:
-      group: deploy-US-PRD-App
-      cancel-in-progress: false
-    steps:
-      - name: Deploy
-        run: echo "Deploying into US-PRD-App"
+    uses: ./.github/workflows/deploy-app.yml
+    with:
+      environment: US-PRD-App

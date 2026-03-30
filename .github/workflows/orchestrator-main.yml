@@ -13,24 +13,14 @@ jobs:
 
   deploy-us-dev-db:
     name: Deploy US-Dev-DB
-    runs-on: ubuntu-24.04
     needs: pull-artifacts
-    environment: US-Dev-DB
-    concurrency:
-      group: deploy-US-Dev-DB
-      cancel-in-progress: false
-    steps:
-      - name: Deploy
-        run: echo "Deploying into US-Dev-DB"
+    uses: ./.github/workflows/deploy-db.yml
+    with:
+      environment: US-Dev-DB
 
   deploy-us-dev-app:
     name: Deploy US-Dev-App
-    runs-on: ubuntu-24.04
     needs: deploy-us-dev-db
-    environment: US-Dev-App
-    concurrency:
-      group: deploy-US-Dev-App
-      cancel-in-progress: false
-    steps:
-      - name: Deploy
-        run: echo "Deploying into US-Dev-App"
+    uses: ./.github/workflows/deploy-app.yml
+    with:
+      environment: US-Dev-App

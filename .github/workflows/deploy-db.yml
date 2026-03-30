@@ -1,0 +1,32 @@
+name: Deploy - DB
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      environment:
+        required: true
+        type: choice
+        options:
+          - US-Dev-DB
+          - EU-QA-DB
+          - US-QA-DB
+          - EU-PRD-DB
+          - US-PRD-DB
+
+concurrency:
+  group: deploy-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy ${{ inputs.environment }}
+    runs-on: ubuntu-24.04
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Deploy
+        run: echo "Deploying DB into ${{ inputs.environment }}"
