@@ -56,7 +56,6 @@ jobs:
     if: |
       always()
       && needs.pull-artifacts.result == 'success'
-      && (needs.deploy-eu-qa-app.result == 'success' || needs.deploy-eu-qa-app.result == 'skipped')
       && (needs.deploy-us-qa-app.result == 'success' || needs.deploy-us-qa-app.result == 'skipped')
     environment: PreRelease-PRD
     concurrency:
