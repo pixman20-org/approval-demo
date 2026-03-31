@@ -85,7 +85,7 @@ jobs:
   pre-release-prd:
     name: Pre-Release PRD Approval
     runs-on: ubuntu-24.04
-    needs: [deploy-eu-qa-app, deploy-us-qa-app]
+    #needs: [deploy-eu-qa-app, deploy-us-qa-app]
     environment: PreRelease-PRD
     concurrency:
       group: deploy-PreRelease-PRD
