@@ -3,6 +3,8 @@ name: Orchestrator - RC
 on:
   workflow_dispatch:
 
+permissions: {}
+
 jobs:
   pull-artifacts:
     name: Pull Artifacts
@@ -11,9 +13,50 @@ jobs:
       - name: Pull artifacts
         run: echo "[STUB] Pulling artifacts"
 
+  supersede-older-runs:
+    name: Supersede Older Waiting Runs
+    runs-on: ubuntu-24.04
+    needs: pull-artifacts
+    permissions:
+      actions: write
+    steps:
+      - name: Cancel older runs at gate, wait for in-progress to reach one
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          while true; do
+            OLDER_ACTIVE=$(gh run list \
+              --repo "$GITHUB_REPOSITORY" \
+              --workflow "${{ github.workflow }}" \
+              --json databaseId,status \
+              --jq '.[] | select(.status != "completed") | "\(.databaseId) \(.status)"')
+
+            STILL_RUNNING=false
+
+            while IFS=' ' read -r run_id status; do
+              [ -z "$run_id" ] && continue
+              if [ "$run_id" -lt "${{ github.run_id }}" ]; then
+                if [ "$status" = "waiting" ]; then
+                  echo "Superseding older waiting run: $run_id"
+                  gh run cancel "$run_id" --repo "$GITHUB_REPOSITORY" || true
+                else
+                  echo "Older run $run_id is $status, waiting for it to reach a gate or complete..."
+                  STILL_RUNNING=true
+                fi
+              fi
+            done <<< "$OLDER_ACTIVE"
+
+            if [ "$STILL_RUNNING" = "false" ]; then
+              echo "No older active runs remain, proceeding"
+              break
+            fi
+
+            sleep 10
+          done
+
   deploy-eu-qa-db:
     name: Deploy EU-QA-DB
-    needs: pull-artifacts
+    needs: supersede-older-runs
     uses: ./.github/workflows/deploy-db.yml
     with:
       environment: EU-QA-DB
@@ -27,7 +70,7 @@ jobs:
 
   deploy-us-qa-db:
     name: Deploy US-QA-DB
-    needs: pull-artifacts
+    needs: supersede-older-runs
     uses: ./.github/workflows/deploy-db.yml
     with:
       environment: US-QA-DB
@@ -39,34 +82,10 @@ jobs:
     with:
       environment: US-QA-App
 
-  supersede-older-runs:
-    name: Supersede Older Waiting Runs
-    runs-on: ubuntu-24.04
-    needs: deploy-us-qa-app
-    permissions:
-      actions: write
-    steps:
-      - name: Cancel older runs waiting at gate
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh run list \
-            --repo "$GITHUB_REPOSITORY" \
-            --workflow "${{ github.workflow }}" \
-            --status waiting \
-            --json databaseId \
-            --jq '.[].databaseId' | \
-          while read -r run_id; do
-            if [ "$run_id" -lt "${{ github.run_id }}" ]; then
-              echo "Superseding older run: $run_id"
-              gh run cancel "$run_id" --repo "$GITHUB_REPOSITORY" || true
-            fi
-          done
-
   pre-release-prd:
     name: Pre-Release PRD Approval
     runs-on: ubuntu-24.04
-    needs: supersede-older-runs
+    needs: [deploy-eu-qa-app, deploy-us-qa-app]
     environment: PreRelease-PRD
     concurrency:
       group: deploy-PreRelease-PRD
