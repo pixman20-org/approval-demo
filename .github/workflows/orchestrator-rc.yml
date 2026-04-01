@@ -60,7 +60,7 @@ jobs:
 
   deploy-eu-qa-db:
     name: Deploy EU-QA-DB
-    needs: supersede-older-runs
+    needs: approve-releasable-pipeline
     uses: ./.github/workflows/deploy-db.yml
     with:
       environment: EU-QA-DB
@@ -74,7 +74,7 @@ jobs:
 
   deploy-us-qa-db:
     name: Deploy US-QA-DB
-    needs: supersede-older-runs
+    needs: approve-releasable-pipeline
     uses: ./.github/workflows/deploy-db.yml
     with:
       environment: US-QA-DB
