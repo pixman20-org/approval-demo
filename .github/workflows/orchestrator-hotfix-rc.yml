@@ -16,6 +16,8 @@ jobs:
   pull-artifacts:
     name: Pull Artifacts
     runs-on: ubuntu-24.04
+    permissions:
+      checks: write
     outputs:
       version: ${{ steps.read-version.outputs.version }}
     steps:
@@ -30,6 +32,20 @@ jobs:
           echo '```' >> $GITHUB_STEP_SUMMARY
       - name: Pull artifacts
         run: echo "[STUB] Pulling artifacts"
+      - name: Annotate check run with version info
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          CHECK_RUN_ID=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs" \
+            --jq '.jobs[] | select(.name == "Pull Artifacts") | .id')
+
+          jq -n \
+            --arg title "Version Info" \
+            --argjson summary "$(cat version.json)" \
+            '{"output": {"title": $title, "summary": ($summary | tojson)}}' | \
+          gh api "repos/$GITHUB_REPOSITORY/check-runs/$CHECK_RUN_ID" \
+            --method PATCH \
+            --input -
 
   approve-releasable-pipeline:
     name: Approve as releasable pipeline
