@@ -13,8 +13,8 @@ jobs:
       - name: Pull artifacts
         run: echo "[STUB] Pulling artifacts"
 
-  supersede-older-runs:
-    name: Supersede Older Waiting Runs
+  approve-releasable-pipeline:
+    name: Approve as releasable pipeline
     runs-on: ubuntu-24.04
     needs: pull-artifacts
     environment: "Approve-Pipeline-RC"

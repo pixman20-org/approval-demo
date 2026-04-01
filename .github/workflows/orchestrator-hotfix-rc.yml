@@ -9,6 +9,8 @@ on:
         default: false
         type: boolean
 
+permissions: {}
+
 jobs:
   pull-artifacts:
     name: Pull Artifacts
@@ -17,10 +19,14 @@ jobs:
       - name: Pull artifacts
         run: echo "[STUB] Pulling artifacts"
 
-  supersede-older-runs:
-    name: Supersede Older Waiting Runs
+  approve-releasable-pipeline:
+    name: Approve as releasable pipeline
     runs-on: ubuntu-24.04
     needs: pull-artifacts
+    environment: "Approve-Pipeline-Hotfix-RC"
+    concurrency:
+      group: "approve-pipeline-hotfix-rc"
+      cancel-in-progress: true
     permissions:
       actions: write
     steps:
@@ -60,7 +66,7 @@ jobs:
 
   deploy-eu-qa-db:
     name: Deploy EU-QA-DB
-    needs: supersede-older-runs
+    needs: approve-releasable-pipeline
     if: ${{ !inputs.skip_qa }}
     uses: ./.github/workflows/deploy-db.yml
     with:
@@ -76,7 +82,7 @@ jobs:
 
   deploy-us-qa-db:
     name: Deploy US-QA-DB
-    needs: supersede-older-runs
+    needs: approve-releasable-pipeline
     if: ${{ !inputs.skip_qa }}
     uses: ./.github/workflows/deploy-db.yml
     with:
@@ -93,10 +99,10 @@ jobs:
   pre-release-prd:
     name: Pre-Release PRD Approval
     runs-on: ubuntu-24.04
-    needs: [supersede-older-runs, deploy-eu-qa-app, deploy-us-qa-app]
+    needs: [approve-releasable-pipeline, deploy-eu-qa-app, deploy-us-qa-app]
     if: |
       always()
-      && needs.supersede-older-runs.result == 'success'
+      && needs.approve-releasable-pipeline.result == 'success'
       && (needs.deploy-eu-qa-app.result == 'success' || needs.deploy-eu-qa-app.result == 'skipped')
       && (needs.deploy-us-qa-app.result == 'success' || needs.deploy-us-qa-app.result == 'skipped')
     environment: PreRelease-PRD
