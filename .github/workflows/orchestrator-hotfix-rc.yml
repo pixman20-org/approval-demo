@@ -2,12 +2,6 @@ name: Orchestrator - Hotfix RC
 
 on:
   workflow_dispatch:
-    inputs:
-      skip_qa:
-        description: Skip QA environment deployments
-        required: false
-        default: false
-        type: boolean
 
 permissions:
   deployments: write
@@ -95,7 +89,6 @@ jobs:
   deploy-eu-qa-db:
     name: Deploy EU-QA-DB
     needs: [pull-artifacts, approve-releasable-pipeline]
-    if: ${{ !inputs.skip_qa }}
     uses: ./.github/workflows/deploy-db.yml
     with:
       environment: EU-QA-DB
@@ -104,7 +97,6 @@ jobs:
   deploy-eu-qa-app:
     name: Deploy EU-QA-App
     needs: [pull-artifacts, deploy-eu-qa-db]
-    if: ${{ !inputs.skip_qa }}
     uses: ./.github/workflows/deploy-app.yml
     with:
       environment: EU-QA-App
@@ -113,7 +105,6 @@ jobs:
   deploy-us-qa-db:
     name: Deploy US-QA-DB
     needs: [pull-artifacts, approve-releasable-pipeline]
-    if: ${{ !inputs.skip_qa }}
     uses: ./.github/workflows/deploy-db.yml
     with:
       environment: US-QA-DB
@@ -122,7 +113,6 @@ jobs:
   deploy-us-qa-app:
     name: Deploy US-QA-App
     needs: [pull-artifacts, deploy-us-qa-db]
-    if: ${{ !inputs.skip_qa }}
     uses: ./.github/workflows/deploy-app.yml
     with:
       environment: US-QA-App
@@ -131,12 +121,7 @@ jobs:
   pre-release-prd:
     name: Pre-Release PRD Approval
     runs-on: ubuntu-24.04
-    needs: [approve-releasable-pipeline, deploy-eu-qa-app, deploy-us-qa-app]
-    if: |
-      always()
-      && needs.approve-releasable-pipeline.result == 'success'
-      && (needs.deploy-eu-qa-app.result == 'success' || needs.deploy-eu-qa-app.result == 'skipped')
-      && (needs.deploy-us-qa-app.result == 'success' || needs.deploy-us-qa-app.result == 'skipped')
+    needs: approve-releasable-pipeline
     environment: PreRelease-PRD
     concurrency:
       group: deploy-PreRelease-PRD
