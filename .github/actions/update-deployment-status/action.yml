@@ -1,0 +1,37 @@
+name: Update Deployment Status
+description: Creates a deployment status with version metadata for the current environment deployment
+
+inputs:
+  environment:
+    description: GitHub environment name (e.g. US-QA-DB)
+    required: true
+  version:
+    description: Version being deployed
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Create versioned deployment status
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        DEPLOYMENT_ID=$(gh api "repos/$GITHUB_REPOSITORY/deployments" \
+          -X GET \
+          -f environment="${{ inputs.environment }}" \
+          -f per_page=1 \
+          --jq '.[0].id // empty')
+
+        if [ -z "$DEPLOYMENT_ID" ]; then
+          echo "::warning::No deployment found for ${{ inputs.environment }}"
+          exit 0
+        fi
+
+        DESCRIPTION=$(printf '{"v":"%s"}' "${{ inputs.version }}")
+        echo "Updating deployment $DEPLOYMENT_ID for ${{ inputs.environment }}: $DESCRIPTION"
+
+        gh api "repos/$GITHUB_REPOSITORY/deployments/$DEPLOYMENT_ID/statuses" \
+          --method POST \
+          -f state=in_progress \
+          -f description="$DESCRIPTION"
