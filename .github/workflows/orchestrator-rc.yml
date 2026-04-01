@@ -3,7 +3,8 @@ name: Orchestrator - RC
 on:
   workflow_dispatch:
 
-permissions: {}
+permissions:
+  deployments: write
 
 jobs:
   pull-artifacts:

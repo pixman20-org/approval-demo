@@ -9,7 +9,8 @@ on:
         default: false
         type: boolean
 
-permissions: {}
+permissions:
+  deployments: write
 
 jobs:
   pull-artifacts:
