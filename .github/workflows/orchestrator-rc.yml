@@ -9,7 +9,18 @@ jobs:
   pull-artifacts:
     name: Pull Artifacts
     runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.read-version.outputs.version }}
     steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Read version
+        id: read-version
+        run: echo "version=$(jq -r .version version.json)" >> $GITHUB_OUTPUT
+      - name: Summarize version
+        run: |
+          echo '```json' >> $GITHUB_STEP_SUMMARY
+          cat version.json >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
       - name: Pull artifacts
         run: echo "[STUB] Pulling artifacts"
 
@@ -60,31 +71,35 @@ jobs:
 
   deploy-eu-qa-db:
     name: Deploy EU-QA-DB
-    needs: approve-releasable-pipeline
+    needs: [pull-artifacts, approve-releasable-pipeline]
     uses: ./.github/workflows/deploy-db.yml
     with:
       environment: EU-QA-DB
+      version: ${{ needs.pull-artifacts.outputs.version }}
 
   deploy-eu-qa-app:
     name: Deploy EU-QA-App
-    needs: deploy-eu-qa-db
+    needs: [pull-artifacts, deploy-eu-qa-db]
     uses: ./.github/workflows/deploy-app.yml
     with:
       environment: EU-QA-App
+      version: ${{ needs.pull-artifacts.outputs.version }}
 
   deploy-us-qa-db:
     name: Deploy US-QA-DB
-    needs: approve-releasable-pipeline
+    needs: [pull-artifacts, approve-releasable-pipeline]
     uses: ./.github/workflows/deploy-db.yml
     with:
       environment: US-QA-DB
+      version: ${{ needs.pull-artifacts.outputs.version }}
 
   deploy-us-qa-app:
     name: Deploy US-QA-App
-    needs: deploy-us-qa-db
+    needs: [pull-artifacts, deploy-us-qa-db]
     uses: ./.github/workflows/deploy-app.yml
     with:
       environment: US-QA-App
+      version: ${{ needs.pull-artifacts.outputs.version }}
 
   pre-release-prd:
     name: Pre-Release PRD Approval
@@ -100,28 +115,32 @@ jobs:
 
   deploy-eu-prd-db:
     name: Deploy EU-PRD-DB
-    needs: pre-release-prd
+    needs: [pull-artifacts, pre-release-prd]
     uses: ./.github/workflows/deploy-db.yml
     with:
       environment: EU-PRD-DB
+      version: ${{ needs.pull-artifacts.outputs.version }}
 
   deploy-eu-prd-app:
     name: Deploy EU-PRD-App
-    needs: deploy-eu-prd-db
+    needs: [pull-artifacts, deploy-eu-prd-db]
     uses: ./.github/workflows/deploy-app.yml
     with:
       environment: EU-PRD-App
+      version: ${{ needs.pull-artifacts.outputs.version }}
 
   deploy-us-prd-db:
     name: Deploy US-PRD-DB
-    needs: deploy-eu-prd-app
+    needs: [pull-artifacts, deploy-eu-prd-app]
     uses: ./.github/workflows/deploy-db.yml
     with:
       environment: US-PRD-DB
+      version: ${{ needs.pull-artifacts.outputs.version }}
 
   deploy-us-prd-app:
     name: Deploy US-PRD-App
-    needs: deploy-us-prd-db
+    needs: [pull-artifacts, deploy-us-prd-db]
     uses: ./.github/workflows/deploy-app.yml
     with:
       environment: US-PRD-App
+      version: ${{ needs.pull-artifacts.outputs.version }}
