@@ -47,8 +47,10 @@ jobs:
       - name: Deploy
         run: |
           echo "Starting DB migration for ${{ inputs.environment }}"
-          for i in $(seq 1 30); do
-            echo "  Operation $i/30..."
-            sleep 1
-          done
+          if false; then # set to true to simulate time taken during migrations
+            for i in $(seq 1 30); do
+              echo "  Operation $i/30..."
+              sleep 1
+            done
+          fi
           echo "DB migration complete for ${{ inputs.environment }}"
