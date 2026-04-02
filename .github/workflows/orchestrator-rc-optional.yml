@@ -1,4 +1,4 @@
-name: Orchestrator - Hotfix RC
+name: Orchestrator - RC (Optional QA)
 
 on:
   workflow_dispatch:
@@ -45,9 +45,9 @@ jobs:
     name: Approve as releasable pipeline
     runs-on: ubuntu-24.04
     needs: pull-artifacts
-    environment: "Approve-Pipeline-Hotfix-RC"
+    environment: "Approve-Pipeline-RC"
     concurrency:
-      group: "approve-pipeline-hotfix-rc"
+      group: "approve-pipeline-rc"
       cancel-in-progress: true
     permissions:
       actions: write
@@ -86,10 +86,42 @@ jobs:
             sleep 10
           done
 
+  deploy-eu-qa-db:
+    name: Deploy EU-QA-DB
+    needs: [pull-artifacts, approve-releasable-pipeline]
+    uses: ./.github/workflows/deploy-db.yml
+    with:
+      environment: EU-QA-DB
+      version: ${{ needs.pull-artifacts.outputs.version }}
+
+  deploy-eu-qa-app:
+    name: Deploy EU-QA-App
+    needs: [pull-artifacts, deploy-eu-qa-db]
+    uses: ./.github/workflows/deploy-app.yml
+    with:
+      environment: EU-QA-App
+      version: ${{ needs.pull-artifacts.outputs.version }}
+
+  deploy-us-qa-db:
+    name: Deploy US-QA-DB
+    needs: [pull-artifacts, approve-releasable-pipeline]
+    uses: ./.github/workflows/deploy-db.yml
+    with:
+      environment: US-QA-DB
+      version: ${{ needs.pull-artifacts.outputs.version }}
+
+  deploy-us-qa-app:
+    name: Deploy US-QA-App
+    needs: [pull-artifacts, deploy-us-qa-db]
+    uses: ./.github/workflows/deploy-app.yml
+    with:
+      environment: US-QA-App
+      version: ${{ needs.pull-artifacts.outputs.version }}
+
   pre-release-prd:
     name: Pre-Release PRD Approval
     runs-on: ubuntu-24.04
-    needs: approve-releasable-pipeline
+    needs: [deploy-us-qa-app]
     environment: PreRelease-PRD
     concurrency:
       group: deploy-PreRelease-PRD
@@ -129,3 +161,15 @@ jobs:
     with:
       environment: US-PRD-App
       version: ${{ needs.pull-artifacts.outputs.version }}
+
+  cleanup:
+    name: Release optional env concurrency
+    runs-on: ubuntu-24.04
+    needs: deploy-us-prd-app
+    permissions:
+      actions: write
+    steps:
+      - name: Cancel run to release waiting QA jobs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run cancel $GITHUB_RUN_ID --repo $GITHUB_REPOSITORY || true
