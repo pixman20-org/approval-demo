@@ -13,6 +13,10 @@ on:
         description: "CI run ID to trace this pipeline back to its trigger (set automatically)"
         required: false
         type: string
+      previous_run_id:
+        description: "Previous orchestrator run ID this continues from (set when re-running with jobs removed)"
+        required: false
+        type: string
 
 permissions:
   deployments: write
@@ -42,6 +46,9 @@ jobs:
           echo '```' >> $GITHUB_STEP_SUMMARY
           if [ -n "${{ inputs.ci_run_id }}" ]; then
             echo "**CI Run:** [server-demo #${{ inputs.ci_run_id }}](https://github.com/pixman20-org/server-demo/actions/runs/${{ inputs.ci_run_id }})" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ -n "${{ inputs.previous_run_id }}" ]; then
+            echo "**Continues from:** [Orchestrator - RC #${{ inputs.previous_run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ inputs.previous_run_id }})" >> $GITHUB_STEP_SUMMARY
           fi
       - name: Pull artifacts
         run: echo "[STUB] Pulling artifacts"
@@ -151,37 +158,17 @@ jobs:
 
   release:
     name: Release
-    runs-on: ubuntu-24.04
     needs: [pull-artifacts, pre-release-prd]
-    permissions:
-      actions: write
-    steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - uses: ./.github/actions/dispatch-and-wait
-        with:
-          github-token: ${{ github.token }}
-          workflow: release.yml
-          version: ${{ needs.pull-artifacts.outputs.version }}
-          ref: ${{ github.ref_name }}
-          repository: ${{ github.repository }}
-          expected-title: "Release ${{ needs.pull-artifacts.outputs.version }}"
+    uses: ./.github/workflows/release.yml
+    with:
+      version: ${{ needs.pull-artifacts.outputs.version }}
 
   publish:
     name: Publish
-    runs-on: ubuntu-24.04
     needs: [pull-artifacts, release]
-    permissions:
-      actions: write
-    steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - uses: ./.github/actions/dispatch-and-wait
-        with:
-          github-token: ${{ github.token }}
-          workflow: publish.yml
-          version: ${{ needs.pull-artifacts.outputs.version }}
-          ref: ${{ github.ref_name }}
-          repository: ${{ github.repository }}
-          expected-title: "Publish ${{ needs.pull-artifacts.outputs.version }}"
+    uses: ./.github/workflows/publish.yml
+    with:
+      version: ${{ needs.pull-artifacts.outputs.version }}
 
   deploy-eu-prd-db:
     name: Deploy EU-PRD-DB
