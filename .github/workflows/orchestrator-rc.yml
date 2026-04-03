@@ -1,7 +1,18 @@
 name: Orchestrator - RC
 
+run-name: "Orchestrator - RC${{ inputs.ci_run_id && format(' ({0})', inputs.ci_run_id) || '' }}"
+
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Version being released (leave blank to read from version.json)"
+        required: false
+        type: string
+      ci_run_id:
+        description: "CI run ID to trace this pipeline back to its trigger (set automatically)"
+        required: false
+        type: string
 
 permissions:
   deployments: write
@@ -24,6 +35,9 @@ jobs:
           echo '```json' >> $GITHUB_STEP_SUMMARY
           cat version.json >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
+          if [ -n "${{ inputs.ci_run_id }}" ]; then
+            echo "**CI Run:** [server-demo #${{ inputs.ci_run_id }}](https://github.com/pixman20-org/server-demo/actions/runs/${{ inputs.ci_run_id }})" >> $GITHUB_STEP_SUMMARY
+          fi
       - name: Pull artifacts
         run: echo "[STUB] Pulling artifacts"
       - name: Annotate check run with version info
