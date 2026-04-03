@@ -1,0 +1,19 @@
+name: Release
+
+run-name: Release ${{ inputs.version }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release"
+        required: true
+        type: string
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Create release
+        run: echo "[STUB] Creating release for v${{ inputs.version }}"

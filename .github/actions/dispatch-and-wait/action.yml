@@ -8,9 +8,6 @@ inputs:
   workflow:
     description: Workflow filename to dispatch (e.g. deploy-db.yml)
     required: true
-  environment:
-    description: Environment name passed as input to the workflow (e.g. EU-QA-DB)
-    required: true
   version:
     description: Version passed as input to the workflow
     required: true
@@ -20,22 +17,36 @@ inputs:
   repository:
     description: Target repository in owner/repo format
     required: true
+  environment:
+    description: Environment name passed as input to the workflow (e.g. EU-QA-DB). Omit for non-deploy workflows.
+    required: false
+  expected-title:
+    description: Expected run displayTitle to match. Defaults to 'Deploy {environment}' if not set.
+    required: false
 
 runs:
   using: composite
   steps:
-    - name: Dispatch ${{ inputs.workflow }} for ${{ inputs.environment }}
+    - name: Dispatch ${{ inputs.workflow }}${{ inputs.environment && format(' for {0}', inputs.environment) || '' }}
       shell: bash
       env:
         GH_TOKEN: ${{ inputs.github-token }}
       run: |
+        FIELDS=(--field "version=${{ inputs.version }}")
+        if [ -n "${{ inputs.environment }}" ]; then
+          FIELDS+=(--field "environment=${{ inputs.environment }}")
+        fi
+
         gh workflow run "${{ inputs.workflow }}" \
           --repo "${{ inputs.repository }}" \
           --ref "${{ inputs.ref }}" \
-          --field environment="${{ inputs.environment }}" \
-          --field version="${{ inputs.version }}"
+          "${FIELDS[@]}"
 
-        EXPECTED_TITLE="Deploy ${{ inputs.environment }}"
+        if [ -n "${{ inputs.expected-title }}" ]; then
+          EXPECTED_TITLE="${{ inputs.expected-title }}"
+        else
+          EXPECTED_TITLE="Deploy ${{ inputs.environment }}"
+        fi
 
         for i in $(seq 1 120); do
           RUN_ID=$(gh run list \
@@ -52,9 +63,9 @@ runs:
         done
 
         if [ -z "$RUN_ID" ]; then
-          echo "::error::Could not find triggered run for ${{ inputs.environment }}"
+          echo "::error::Could not find triggered run for $EXPECTED_TITLE"
           exit 1
         fi
 
-        echo "Waiting for run $RUN_ID (${{ inputs.environment }})..."
+        echo "Waiting for run $RUN_ID ($EXPECTED_TITLE)..."
         gh run watch "$RUN_ID" --repo "${{ inputs.repository }}" --exit-status

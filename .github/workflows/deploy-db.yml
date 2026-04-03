@@ -1,7 +1,5 @@
 name: Deploy - DB
 
-run-name: Deploy ${{ inputs.environment }}
-
 on:
   workflow_call:
     inputs:
