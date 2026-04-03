@@ -1,0 +1,60 @@
+name: Dispatch and Wait
+description: Dispatches a workflow_dispatch workflow and waits for the triggered run to complete
+
+inputs:
+  github-token:
+    description: GitHub token with actions:write permission
+    required: true
+  workflow:
+    description: Workflow filename to dispatch (e.g. deploy-db.yml)
+    required: true
+  environment:
+    description: Environment name passed as input to the workflow (e.g. EU-QA-DB)
+    required: true
+  version:
+    description: Version passed as input to the workflow
+    required: true
+  ref:
+    description: Branch or tag to dispatch the workflow on
+    required: true
+  repository:
+    description: Target repository in owner/repo format
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Dispatch ${{ inputs.workflow }} for ${{ inputs.environment }}
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: |
+        gh workflow run "${{ inputs.workflow }}" \
+          --repo "${{ inputs.repository }}" \
+          --ref "${{ inputs.ref }}" \
+          --field environment="${{ inputs.environment }}" \
+          --field version="${{ inputs.version }}"
+
+        EXPECTED_TITLE="Deploy ${{ inputs.environment }}"
+
+        for i in $(seq 1 120); do
+          RUN_ID=$(gh run list \
+            --repo "${{ inputs.repository }}" \
+            --workflow "${{ inputs.workflow }}" \
+            --branch "${{ inputs.ref }}" \
+            --limit 10 \
+            --json databaseId,displayTitle,status | \
+            jq -r --arg title "$EXPECTED_TITLE" \
+            '[.[] | select(.displayTitle == $title and .status != "completed")] | .[0].databaseId // empty')
+          [ -n "$RUN_ID" ] && break
+          echo "Run not yet visible, retrying in 5s... ($i/120)"
+          sleep 5
+        done
+
+        if [ -z "$RUN_ID" ]; then
+          echo "::error::Could not find triggered run for ${{ inputs.environment }}"
+          exit 1
+        fi
+
+        echo "Waiting for run $RUN_ID (${{ inputs.environment }})..."
+        gh run watch "$RUN_ID" --repo "${{ inputs.repository }}" --exit-status
